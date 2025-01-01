@@ -31,7 +31,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let links: Vec<XasidaLink> = serde_json::from_reader(reader)?;
     // Print the parsed links
     for (index, link) in links.iter().enumerate() {
-        println!("Link {}: {:?}", index + 1, link);
+        println!("Link {}: {:?}", index + 1, link.href);
     }
 
     Ok(())
