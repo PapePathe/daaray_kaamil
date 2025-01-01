@@ -36,27 +36,27 @@ async fn main() -> Result<(), PDF2ImageError> {
                 .create()
                 .expect("Producer creation failed");
 
-                let base_url = "http://localhost:9000".parse::<BaseUrl>().unwrap();
-                let static_provider = StaticProvider::new("miniominio", "miniominio", None);
+            let base_url = "http://localhost:9000".parse::<BaseUrl>().unwrap();
+            let static_provider = StaticProvider::new("miniominio", "miniominio", None);
 
-                let client = ClientBuilder::new(base_url.clone())
-                    .provider(Some(Box::new(static_provider)))
-                    .build()
-                    .unwrap();
+            let client = ClientBuilder::new(base_url.clone())
+                .provider(Some(Box::new(static_provider)))
+                .build()
+                .unwrap();
 
-                let bucket_name: &str = "xasida.pdf.pages";
-                let exists: bool = client
-                    .bucket_exists(&BucketExistsArgs::new(bucket_name).unwrap())
+            let bucket_name: &str = "xasida.pdf.pages";
+            let exists: bool = client
+                .bucket_exists(&BucketExistsArgs::new(bucket_name).unwrap())
+                .await
+                .unwrap();
+
+            // Make 'bucket_name' bucket if not exist.
+            if !exists {
+                client
+                    .make_bucket(&MakeBucketArgs::new(bucket_name).unwrap())
                     .await
                     .unwrap();
-
-                // Make 'bucket_name' bucket if not exist.
-                if !exists {
-                    client
-                        .make_bucket(&MakeBucketArgs::new(bucket_name).unwrap())
-                        .await
-                        .unwrap();
-                }
+            }
             let items = p.to_vec();
             let streamed: Vec<DynamicImage> = stream::iter(items).collect().await;
             for d in streamed {
@@ -68,24 +68,24 @@ async fn main() -> Result<(), PDF2ImageError> {
                 client
                     .upload_object(
                         &mut UploadObjectArgs::new(
-                            &bucket_name, 
-                            object_name, 
+                            &bucket_name,
+                            object_name,
                             "/Users/ppathe/rust_projects/xasida/tmp/Yawma%20Arbuhaan%20i%20rajab.pdf"
                         ).unwrap(),
                     )
                     .await
                     .unwrap();
 
-               // match producer
-               //     .send(
-               //         FutureRecord::to("test").key("key").payload("{test: test}"),
-               //         Duration::from_secs(0),
-               //     )
-               //     .await
-               // {
-               //     Ok(delivery) => println!("Message delivered: {:?}", delivery),
-               //     Err((err, _)) => eprintln!("Error delivering message: {}", err),
-               // }
+                // match producer
+                //     .send(
+                //         FutureRecord::to("test").key("key").payload("{test: test}"),
+                //         Duration::from_secs(0),
+                //     )
+                //     .await
+                // {
+                //     Ok(delivery) => println!("Message delivered: {:?}", delivery),
+                //     Err((err, _)) => eprintln!("Error delivering message: {}", err),
+                // }
             }
         }
         Err(e) => println!("Error {}", e),
