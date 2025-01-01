@@ -5,11 +5,11 @@ use minio::s3::creds::StaticProvider;
 use minio::s3::http::BaseUrl;
 use pdf2image::image::DynamicImage;
 use pdf2image::{PDF2ImageError, RenderOptionsBuilder, PDF};
-use rdkafka::config::ClientConfig;
-use rdkafka::producer::{FutureProducer, FutureRecord};
+//use rdkafka::config::ClientConfig;
+//use rdkafka::producer::{FutureProducer, FutureRecord};
 use std::env;
-use std::path::Path;
-use std::time::Duration;
+//use std::path::Path;
+//use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), PDF2ImageError> {
@@ -31,10 +31,10 @@ async fn main() -> Result<(), PDF2ImageError> {
     match pages {
         Ok(p) => {
             println!("Found some pages");
-            let producer: FutureProducer = ClientConfig::new()
-                .set("bootstrap.servers", "https://localhost:19099") // Set your Kafka broker address
-                .create()
-                .expect("Producer creation failed");
+            //            let producer: FutureProducer = ClientConfig::new()
+            //                .set("bootstrap.servers", "https://localhost:19099") // Set your Kafka broker address
+            //                .create()
+            //                .expect("Producer creation failed");
 
             let base_url = "http://localhost:9000".parse::<BaseUrl>().unwrap();
             let static_provider = StaticProvider::new("miniominio", "miniominio", None);
@@ -59,7 +59,7 @@ async fn main() -> Result<(), PDF2ImageError> {
             }
             let items = p.to_vec();
             let streamed: Vec<DynamicImage> = stream::iter(items).collect().await;
-            for d in streamed {
+            for _d in streamed {
                 // Name of the object that will be stored in the bucket
                 let object_name: &str = "asiaphotos-2015.pdf";
 
