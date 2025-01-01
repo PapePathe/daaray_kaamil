@@ -1,62 +1,42 @@
-name: Create release
-
+name: Release
+permissions:
+  contents: write
 on:
   push:
     tags:
-      - "v*"
-
-permissions:
-  contents: write
-
-env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  tag: ${{ github.ref_name }}
+      - v.*
 jobs:
-  release:
-    name: Release pushed tag
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Create release
-        run: |
-          gh release create "$tag" \
-              --repo="$GITHUB_REPOSITORY" \
-              --title="${tag#v}" \
-              --generate-notes
-
-  build-linux:
+  create-release:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-      - name: Build
-        run: cargo build --release
-      - name: Upload a release file
-        run: |
-          tar cfz linux.tar.gz -C target/release xasida
-          gh release upload $TAG linux.tar.gz
+      - uses: taiki-e/create-gh-release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-  build-macos:
-    runs-on: macos-latest
-
+  upload-assets:
+    needs: create-release
+    strategy:
+      matrix:
+        include:
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Build
-        run: cargo build --release
-      - name: Upload a release file
-        run: |
-          tar cfz macos_darwin.tar.gz -C target/release xasida
-          gh release upload $TAG macos_darwin.tar.gz
-
-  build-windows:
-    runs-on: windows-latest
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build
-        run: cargo build --release
-      - name: Upload a release file
-        shell: bash
-        run: |
-          cd target/release
-          7z a windows.zip xasida.exe
-          gh release upload $TAG windows.zip
+      - name: Install cross-compilation tools
+        uses: taiki-e/setup-cross-toolchain-action@v1
+        with:
+          target: ${{ matrix.target }}
+        if: startsWith(matrix.os, 'ubuntu')
+      - uses: taiki-e/upload-rust-binary-action@v1
+        with:
+          bin: xasida,downloader,extractpdf,getpdf
+          target: ${{ matrix.target }}
+          token: ${{ secrets.GITHUB_TOKEN }}
