@@ -2,8 +2,8 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct XasidaLink {
-    href: String,
-    text: String,
+    pub href: String,
+    pub text: String,
 }
 
 impl XasidaLink {

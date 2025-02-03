@@ -3,31 +3,46 @@ use crate::xasida_link::XasidaLink;
 use std::env;
 use std::fs::File;
 use std::io::BufReader;
-use std::process;
-use Box;
 
 pub mod config;
 pub mod xasida_link;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Collect command-line arguments
     let args: Vec<String> = env::args().collect();
+    let config = initialize_config(&args)?;
+    let links = read_links(&config.source_path)?;
 
-    let config = Config::new(&args).unwrap_or_else(|err| {
-        eprintln!("ERR: xasida {}", err);
-        process::exit(1);
-    });
-
-    // Open the JSON file
-    let file = File::open(config.source_path)?;
-    let reader = BufReader::new(file);
-
-    // Deserialize the JSON file into the Config struct
-    let links: Vec<XasidaLink> = serde_json::from_reader(reader)?;
-    // Print the parsed links
-    for (index, link) in links.iter().enumerate() {
-        println!("Link {}: {:?}", index + 1, link);
-    }
-
+    process_links(&links);
     Ok(())
 }
+
+fn initialize_config(args: &[String]) -> Result<Config, Box<dyn std::error::Error>> {
+    Config::new(args).map_err(|err| {
+        let message = format!("ERR: xasida {}", err);
+        eprintln!("{}", message);
+        Box::<dyn std::error::Error>::from(message)
+    })
+}
+
+fn read_links(source_path: &str) -> Result<Vec<XasidaLink>, Box<dyn std::error::Error>> {
+    let file = File::open(source_path).map_err(|err| {
+        let message = format!("ERR: Failed to open file {}: {}", source_path, err);
+        eprintln!("{}", message);
+        Box::<dyn std::error::Error>::from(message)
+    })?;
+    let reader = BufReader::new(file);
+
+    serde_json::from_reader(reader).map_err(|err| {
+        let message = format!("ERR: Failed to parse JSON: {}", err);
+        eprintln!("{}", message);
+        Box::<dyn std::error::Error>::from(message)
+    })
+}
+
+fn process_links(links: &[XasidaLink]) {
+    links.iter().enumerate().for_each(|(index, link)| {
+        println!("Link {}: {:?}", index + 1, link);
+    });
+}
+
+fn download_pdf(l: XasidaLink) {}
